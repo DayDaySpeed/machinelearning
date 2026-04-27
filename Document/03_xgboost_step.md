@@ -3,7 +3,7 @@
 本文档对应 `notebooks/xgboost.ipynb`。在当前项目中，XGBoost 是三个模型里效果最好的方案。
 
 ## 1. 模型定位
-
+- 介绍：XGBoost（Extreme Gradient Boosting）是一种 基于梯度提升（Gradient Boosting）的高效机器学习算法，主要用于 回归和分类问题，在 Kaggle、数据竞赛和工业应用中非常流行。
 - 算法：`XGBRegressor`
 - 目的：进一步降低预测误差，作为部署候选模型
 
