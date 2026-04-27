@@ -1,0 +1,3 @@
+export KAGGLE_API_TOKEN=KGAT_148aef67b4bcaf6d98b482bdbf0dde5a
+
+python3 get_data.py

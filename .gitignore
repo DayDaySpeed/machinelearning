@@ -1,0 +1,38 @@
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and runtime files
+logs/
+*.log
+*.pid
+
+# Model/data artifacts (if generated locally)
+*.joblib
