@@ -1,6 +1,6 @@
 # 项目目录结构（priceProjections）
 
-下面是当前仓库的实际结构与用途说明，便于快速定位文件。
+下面是当前仓库的实际结构与用途说明
 
 ```text
 priceProjections/
