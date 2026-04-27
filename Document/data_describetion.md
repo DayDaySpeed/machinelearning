@@ -1,57 +1,56 @@
-1 train.csv（最重要）
-这是训练数据。
+# 数据集说明（House Prices）
 
-里面有：
+本项目使用 Kaggle 竞赛 **House Prices - Advanced Regression Techniques** 数据集。  
+下载脚本位于 `data/get_data.py`，默认会写入 `data/kaggle_cache/`。
 
-房屋特征（80个左右）
+## 核心文件
 
-真正房价标签：
+### 1) `train.csv`（训练集）
 
-￼
-SalePrice
-机器学习训练就用这个。
+- 包含约 1460 条样本、81 列（含目标列）
+- 目标列为 `SalePrice`
+- 用于：
+  - EDA（探索性分析）
+  - 模型训练
+  - 本地验证（如 train/test split）
 
-你会拿它：
+### 2) `test.csv`（测试集）
 
-￼
-训练模型
-验证模型
-做EDA
-2 test.csv
-这是测试集。
+- 不包含 `SalePrice`
+- 用于生成最终预测结果
+- 在 Kaggle 场景中通常用于线上提交
 
-只有房屋特征：
+### 3) `sample_submission.csv`
 
-￼
-没有 SalePrice
-以后训练完模型，用它做预测。
+- 提交模板，格式如下：
 
-如果做 Kaggle 提交，就是对这个预测。
-
-3 sample_submission.csv
-这是提交格式模板。
-
-长这样：
-
-￼
+```csv
 Id,SalePrice
 1461,123456
 1462,234567
-只是告诉你预测结果要怎么组织。
+```
 
-现在先不用管。
+### 4) `data_description.txt`
 
-4 data_description.txt
-这个非常重要。
+- 每个字段的业务含义说明文档
+- 特征工程和异常值分析时必须参考
 
-很多人忽略它。
+## 本项目当前使用的关键特征
 
-里面解释每个字段是什么意思，比如：
+根据现有 notebook，当前三种模型统一使用以下 5 个特征：
 
-￼
-OverallQual = 房屋整体质量评分
+- `OverallQual`：整体质量评分
+- `GrLivArea`：地上居住面积
+- `GarageCars`：车库容量（可停放车辆数）
+- `TotalBsmtSF`：地下室总面积
+- `YearBuilt`：建造年份
 
-GrLivArea = 地上居住面积
+目标值：
 
-GarageCars = 车库容量
-这个做特征工程会用到。
+- `SalePrice`
+
+## 下载与准备
+
+1. 安装依赖（见 `requirements.txt`）
+2. 运行 `python3 data/get_data.py`
+3. 确认数据已下载到 `data/kaggle_cache/competitions/house-prices-advanced-regression-techniques/`
