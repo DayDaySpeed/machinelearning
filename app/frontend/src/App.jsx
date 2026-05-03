@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import './App.css';
 
 export default function HousePriceEstimator() {
   const isPredictingRef = useRef(false);
@@ -19,74 +20,74 @@ export default function HousePriceEstimator() {
   const [recommendation, setRecommendation] = useState(null);
   const [budgetError, setBudgetError] = useState(null);
 
-  const rmse = 40000;
+  const rmse = 27980.53;
   const meanPrice = 180000;
   const minBudget = 50000;
   const maxBudget = 2000000;
 
   const features = [
-    ['OverallQual', '🏠 房屋质量 (1-10)', 1, 10],
-    ['GrLivArea', '📐 面积 (500-5000)', 500, 5000],
-    ['GarageCars', '🚗 车库 (0-4)', 0, 4],
-    ['TotalBsmtSF', '📊 地下室 (0-3000)', 0, 3000],
-    ['YearBuilt', '📅 年份 (1900-2025)', 1900, 2025],
+    ['OverallQual', '整体质量 OverallQual', 1, 10],
+    ['GrLivArea', '地上居住面积 GrLivArea', 500, 5000],
+    ['GarageCars', '车库容量 GarageCars', 0, 4],
+    ['TotalBsmtSF', '地下室面积 TotalBsmtSF', 0, 3000],
+    ['YearBuilt', '建造年份 YearBuilt', 1900, 2026],
   ];
 
+  /** 与 README / Notebook 一致的验证集指标；R² 用于条形图比例展示 */
   const models = [
-    ['Linear Regression', 0.79],
-    ['Random Forest', 0.89],
-    ['XGBoost', 0.90],
+    { name: 'Linear Regression', r2: 0.793865, rmse: 39763.3 },
+    { name: 'Random Forest', r2: 0.890988, rmse: 28916.33 },
+    { name: 'XGBoost', r2: 0.89793, rmse: 27980.53 },
   ];
+  const maxR2 = Math.max(...models.map((m) => m.r2));
 
   const preferenceOptions = [
     {
       value: 'balanced',
-      label: '⚖️ 均衡',
-      description: '面积、品质和车库保持相对平衡，适合大多数场景。',
+      label: '均衡',
+      description: '面积、品质与车库相对平衡，适合多数购房场景。',
     },
     {
       value: 'spaceFirst',
-      label: '📐 面积优先',
-      description: '在预算内尽量提升面积，适合看重居住空间的家庭。',
+      label: '面积优先',
+      description: '在预算内倾向更大居住面积。',
     },
     {
       value: 'qualityFirst',
-      label: '🏠 品质优先',
-      description: '优先提升房屋品质，适合关注装修和居住体验的用户。',
+      label: '品质优先',
+      description: '优先提升整体质量与居住体验。',
     },
     {
       value: 'garageFirst',
-      label: '🚗 车库优先',
-      description: '优先保证更好的车位配置，适合多车家庭或通勤需求。',
+      label: '车位优先',
+      description: '倾向更充足的车库/车位配置。',
     },
   ];
 
-  // ✅ 核心：统一校验
   function validateForm() {
-    for (let [key, , min, max] of features) {
-      let val = Number(form[key]);
+    for (const [key, , min, max] of features) {
+      const val = Number(form[key]);
 
-      if (isNaN(val)) {
-        setError(`${key} 不是数字`);
+      if (Number.isNaN(val)) {
+        setError(`${key} 须为有效数字`);
         return false;
       }
 
       if (val < min || val > max) {
-        setError(`${key} 必须在 ${min} ~ ${max}`);
+        setError(`${key} 须在 ${min}～${max} 范围内`);
         return false;
       }
     }
 
-    const hasValid = Object.values(form).some(v => Number(v) > 0);
+    const hasValid = Object.values(form).some((v) => Number(v) > 0);
     if (!hasValid) {
-      setError('请至少输入一个有效值');
+      setError('请至少填写一项有效数值');
       return false;
     }
 
     return true;
   }
 
-  // ✅ 预测（统一入口）
   async function predictPrice() {
     if (loading || isPredictingRef.current) return;
     setError(null);
@@ -112,7 +113,7 @@ export default function HousePriceEstimator() {
       const data = await res.json();
       setPrice(Math.round(data.predicted_price));
     } catch {
-      setError('请求失败，请检查后端');
+      setError('请求失败，请确认后端服务已启动');
     } finally {
       isPredictingRef.current = false;
       setLoading(false);
@@ -128,7 +129,7 @@ export default function HousePriceEstimator() {
   function handleBlur(key) {
     let val = Number(form[key]);
 
-    if (form[key] === '' || isNaN(val)) {
+    if (form[key] === '' || Number.isNaN(val)) {
       val = 0;
     }
 
@@ -138,7 +139,7 @@ export default function HousePriceEstimator() {
   function handleChange(key, value) {
     setForm({
       ...form,
-      [key]: value === '' ? '' : Number(value)
+      [key]: value === '' ? '' : Number(value),
     });
   }
 
@@ -149,14 +150,6 @@ export default function HousePriceEstimator() {
     action();
   }
 
-  function getButtonStyle(disabled) {
-    return {
-      ...styles.button,
-      opacity: disabled ? 0.7 : 1,
-      cursor: disabled ? 'not-allowed' : 'pointer',
-    };
-  }
-
   function handleBudgetChange(value) {
     const nextValue = Number(value);
     setBudget(value === '' ? '' : nextValue);
@@ -165,12 +158,12 @@ export default function HousePriceEstimator() {
 
   function generateRecommendation() {
     if (budget === '' || Number.isNaN(Number(budget))) {
-      setBudgetError('预算必须是数字');
+      setBudgetError('请输入有效预算金额');
       return;
     }
 
     if (Number(budget) < minBudget || Number(budget) > maxBudget) {
-      setBudgetError(`预算需在 ${minBudget} ~ ${maxBudget}`);
+      setBudgetError(`预算须在 ${minBudget.toLocaleString()}～${maxBudget.toLocaleString()} 之间`);
       return;
     }
 
@@ -200,258 +193,224 @@ export default function HousePriceEstimator() {
       area,
       quality,
       garage,
-      preference: preferenceOptions.find((item) => item.value === preference)?.label ?? '⚖️ 均衡',
+      preference:
+        preferenceOptions.find((item) => item.value === preference)?.label ?? '均衡',
     });
   }
 
-  function getMarketLabel(price) {
-    if (price > meanPrice * 1.2) return '偏高 🔺';
-    if (price < meanPrice * 0.8) return '性价比高 🟢';
-    return '正常';
+  function getMarketLabel(p) {
+    if (p > meanPrice * 1.2) return '高于样本均价区间';
+    if (p < meanPrice * 0.8) return '低于样本均价区间';
+    return '处于样本均价附近';
   }
 
+  const currencyFmt = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  });
+
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-
-        {/* ✅ 用 form 包裹（关键） */}
-        <form
-          style={styles.cardLarge}
-          onSubmit={(e) => {
-            e.preventDefault();
-            predictPrice();
-          }}
-        >
-          <h1 style={styles.title}>房价预测系统</h1>
-          <p style={styles.subtitle}>基于XGBoost的智能估价</p>
-
-          <div style={styles.grid}>
-            {features.map(([key, label]) => (
-              <div key={key} style={styles.field}>
-                <label>{label}</label>
-                <input
-                  type="number"
-                  value={form[key]}
-                  onFocus={() => handleFocus(key)}
-                  onBlur={() => handleBlur(key)}
-                  onChange={(e) => handleChange(key, e.target.value)}
-                  onKeyDown={(e) => handleEnterAction(e, predictPrice)}
-                  style={styles.input}
-                />
-              </div>
-            ))}
+    <div className="app">
+      <header className="app-nav">
+        <div className="app-brand">
+          <div className="app-logo" aria-hidden>
+            PP
           </div>
-
-          {/* ✅ submit按钮 */}
-          <button
-            type="submit"
-            style={getButtonStyle(loading)}
-            disabled={loading}
-          >
-            开始预测
-          </button>
-
-          {error && <div style={styles.errorBox}>{error}</div>}
-
-          {price && (
-            <div style={styles.resultBox}>
-              <div style={styles.resultValue}>
-                {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                  maximumFractionDigits: 0
-                }).format(price)}
-              </div>
-
-              <div>误差范围：± ${rmse.toLocaleString()}</div>
-              <div>市场评价：{getMarketLabel(price)}</div>
-
-              {/* ⭐ Explain AI */}
-              <div style={{ marginTop: 10 }}>
-                <strong>Why this price?</strong>
-                <div>+ 房屋质量是主要影响因素</div>
-                <div>+ 面积是第二关键因素</div>
-              </div>
-            </div>
-          )}
-
-          {/* 预算推荐 */}
-          <div style={styles.section}>
-            <h3>预算推荐</h3>
-            <div style={styles.field}>
-              <label>选择偏好</label>
-              <div style={styles.preferenceGroup}>
-                {preferenceOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setPreference(option.value)}
-                    style={{
-                      ...styles.preferenceButton,
-                      ...(preference === option.value ? styles.preferenceButtonActive : {}),
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <div style={styles.preferenceHint}>
-                {preferenceOptions.find((option) => option.value === preference)?.description}
-              </div>
-            </div>
-            <input
-              type="number"
-              value={budget}
-              onChange={(e) => handleBudgetChange(e.target.value)}
-              onKeyDown={(e) => handleEnterAction(e, generateRecommendation)}
-              style={styles.input}
-            />
-            <button
-              type="button"
-              onClick={generateRecommendation}
-              style={getButtonStyle(budget === '' || Number.isNaN(Number(budget)))}
-              disabled={budget === '' || Number.isNaN(Number(budget))}
-            >
-              推荐配置
-            </button>
-            {budgetError && <div style={styles.errorBox}>{budgetError}</div>}
-
-            {recommendation && (
-              <div style={{ marginTop: 10 }}>
-                偏好: {recommendation.preference}<br />
-                面积: {recommendation.area} sqft<br />
-                质量: {recommendation.quality}<br />
-                车库: {recommendation.garage}
-              </div>
-            )}
+          <div className="app-brand-text">
+            <span className="app-brand-name">Price Projections</span>
+            <span className="app-brand-tag">House price estimator</span>
           </div>
-        </form>
+        </div>
+        <span className="app-nav-meta">Kaggle · XGBoost 部署版</span>
+      </header>
 
-        {/* 模型对比 */}
-        <div style={styles.cardSmall}>
-          <h2 style={styles.sectionTitle}>模型对比</h2>
-
-          {models.map(([name, val]) => (
-            <div key={name} style={styles.modelRow}>
-              <div style={styles.modelHeader}>
-                <span>{name}</span>
-                <span>{val}</span>
-              </div>
-              <div style={styles.barBg}>
-                <div style={{ ...styles.barFill, width: `${val * 100}%` }} />
-              </div>
-            </div>
-          ))}
+      <main className="app-main">
+        <div className="app-hero">
+          <h1>房价智能估价</h1>
+          <p>
+            基于结构化特征（质量、面积、车库、地下室、建造年份）的回归预测。输入参数后获取美元计价估计值，并查看与基线模型的指标对比。
+          </p>
         </div>
 
-      </div>
+        <div className="app-layout">
+          <form
+            className="panel panel-primary"
+            onSubmit={(e) => {
+              e.preventDefault();
+              predictPrice();
+            }}
+          >
+            <div className="panel-header">
+              <h2>参数输入</h2>
+              <p className="panel-desc">所有字段将提交至 /api/predict，与训练管线一致的五维特征。</p>
+            </div>
+            <div className="panel-divider" />
+            <div className="panel-body">
+              <div className="form-grid">
+                {features.map(([key, label, min, max]) => (
+                  <div key={key} className="field">
+                    <div className="field-label-row">
+                      <label htmlFor={key}>{label}</label>
+                      <span className="field-hint">
+                        {min}–{max}
+                      </span>
+                    </div>
+                    <input
+                      id={key}
+                      type="number"
+                      inputMode="decimal"
+                      value={form[key]}
+                      onFocus={() => handleFocus(key)}
+                      onBlur={() => handleBlur(key)}
+                      onChange={(e) => handleChange(key, e.target.value)}
+                      onKeyDown={(e) => handleEnterAction(e, predictPrice)}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={loading}
+              >
+                {loading ? '正在预测…' : '运行预测'}
+              </button>
+
+              {error && <div className="alert alert-error">{error}</div>}
+
+              {price != null && (
+                <div className="result-card">
+                  <div className="result-price">{currencyFmt.format(price)}</div>
+                  <div className="result-meta">
+                    <div>
+                      <strong>参考误差带</strong>：± {Math.round(rmse).toLocaleString()} USD（与当前部署模型验证 RMSE 同量级）
+                    </div>
+                    <div>
+                      <strong>相对位置</strong>：{getMarketLabel(price)}
+                    </div>
+                  </div>
+                  <div className="result-explain">
+                    <h3>结果说明</h3>
+                    <ul>
+                      <li>OverallQual 与 GrLivArea 对估价影响通常最为显著。</li>
+                      <li>预测值为点估计，实际成交受地段、市场周期等因素影响。</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              <div className="section-block">
+                <h3>预算与偏好</h3>
+                <div className="field">
+                  <span className="field-label-row">
+                    <label>购房偏好</label>
+                  </span>
+                  <div className="preference-grid">
+                    {preferenceOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`preference-btn${preference === option.value ? ' is-active' : ''}`}
+                        onClick={() => setPreference(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="preference-hint">
+                    {preferenceOptions.find((o) => o.value === preference)?.description}
+                  </p>
+                </div>
+
+                <div className="field" style={{ marginTop: '1rem' }}>
+                  <div className="field-label-row">
+                    <label htmlFor="budget">预算（USD）</label>
+                    <span className="field-hint">
+                      {minBudget.toLocaleString()}–{maxBudget.toLocaleString()}
+                    </span>
+                  </div>
+                  <input
+                    id="budget"
+                    type="number"
+                    inputMode="numeric"
+                    value={budget}
+                    onChange={(e) => handleBudgetChange(e.target.value)}
+                    onKeyDown={(e) => handleEnterAction(e, generateRecommendation)}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={generateRecommendation}
+                  disabled={budget === '' || Number.isNaN(Number(budget))}
+                >
+                  生成参考配置
+                </button>
+                {budgetError && <div className="alert alert-error">{budgetError}</div>}
+
+                {recommendation && (
+                  <div className="rec-card">
+                    <dl>
+                      <div>
+                        <dt>偏好 · </dt>
+                        <dd>{recommendation.preference}</dd>
+                      </div>
+                      <div>
+                        <dt>参考面积 · </dt>
+                        <dd>{recommendation.area} sq ft</dd>
+                      </div>
+                      <div>
+                        <dt>参考质量分 · </dt>
+                        <dd>{recommendation.quality} / 10</dd>
+                      </div>
+                      <div>
+                        <dt>参考车位 · </dt>
+                        <dd>{recommendation.garage}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                )}
+              </div>
+            </div>
+          </form>
+
+          <aside className="panel panel-aside">
+            <div className="panel-header">
+              <h2>模型性能</h2>
+              <p className="panel-desc">与仓库内 Notebook 一致的验证集 R² 与 RMSE（五维特征）。</p>
+            </div>
+            <div className="panel-divider" />
+            <div className="panel-body">
+              <div className="model-list">
+                {models.map((m) => (
+                  <div key={m.name} className="model-item">
+                    <div className="model-item-header">
+                      <span className="model-item-name">{m.name}</span>
+                      <span className="model-item-metric">R² {m.r2.toFixed(4)}</span>
+                    </div>
+                    <div className="model-bar-track">
+                      <div
+                        className="model-bar-fill"
+                        style={{ width: `${(m.r2 / maxR2) * 100}%` }}
+                      />
+                    </div>
+                    <div className="model-item-footer">
+                      RMSE {Math.round(m.rmse).toLocaleString()} USD
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <footer className="app-footer">
+          课程演示用途 · 预测结果不构成投资或定价建议
+        </footer>
+      </main>
     </div>
   );
 }
-
-// 样式不变
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#f1f5f9',
-    padding: 24,
-    fontFamily: 'system-ui, sans-serif',
-  },
-  container: {
-    maxWidth: 1100,
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: '2fr 1fr',
-    gap: 20,
-  },
-  cardLarge: {
-    background: '#fff',
-    padding: 24,
-    borderRadius: 16,
-    boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-  },
-  cardSmall: {
-    background: '#fff',
-    padding: 20,
-    borderRadius: 16,
-    boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-  },
-  title: { fontSize: 28, fontWeight: 700 },
-  subtitle: { color: '#64748b', marginBottom: 20 },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 12,
-    marginBottom: 20,
-  },
-  field: { display: 'flex', flexDirection: 'column' },
-  preferenceGroup: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: 8,
-    marginTop: 8,
-  },
-  preferenceButton: {
-    padding: '10px 12px',
-    borderRadius: 10,
-    border: '1px solid #cbd5e1',
-    background: '#fff',
-    color: '#0f172a',
-    cursor: 'pointer',
-    textAlign: 'left',
-    fontSize: 14,
-  },
-  preferenceButtonActive: {
-    border: '1px solid #0f172a',
-    background: '#0f172a',
-    color: '#fff',
-  },
-  preferenceHint: {
-    marginTop: 8,
-    color: '#475569',
-    fontSize: 13,
-    lineHeight: 1.5,
-  },
-  input: {
-    padding: 10,
-    borderRadius: 10,
-    border: '1px solid #e2e8f0',
-  },
-  button: {
-    marginTop: 10,
-    padding: 14,
-    width: '100%',
-    borderRadius: 12,
-    background: '#0f172a',
-    color: '#fff',
-    border: 'none',
-    cursor: 'pointer',
-    opacity: 1,
-  },
-  resultBox: {
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 12,
-    background: '#ecfdf5',
-  },
-  resultValue: { fontSize: 32, fontWeight: 700 },
-  errorBox: { marginTop: 20, padding: 12, background: '#fee2e2' },
-  section: { marginTop: 20 },
-  sectionTitle: { fontSize: 20, marginBottom: 16 },
-  modelRow: { marginBottom: 14 },
-  modelHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  barBg: {
-    width: '100%',
-    height: 10,
-    background: '#e2e8f0',
-    borderRadius: 999,
-  },
-  barFill: {
-    height: 10,
-    background: '#0f172a',
-  }
-};
